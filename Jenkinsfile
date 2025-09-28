@@ -12,23 +12,36 @@ pipeline {
             steps { checkout scm }
         }
 
+        stage('Check Docker') {
+            steps {
+                sh 'docker --version'
+                sh 'docker info'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build("${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}")
+                dir('tro-client') {
+                    sh """
+                        docker build -t ${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} .
+                        docker tag ${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} ${REGISTRY}/${IMAGE_NAME}:latest
+                    """
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                script {
-                    def image = docker.image("${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}")
-                    docker.withRegistry("http://${REGISTRY}", null) {
-                        image.push()
-                        image.push('latest')
-                    }
-                }
+                withCredentials([usernamePassword(credentialsId: 'docker-registry-credentials',
+                                                 usernameVariable: 'DOCKER_USER',
+                                                 passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                        echo \$DOCKER_PASS | docker login ${REGISTRY} -u \$DOCKER_USER --password-stdin
+                        docker push ${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}
+                        docker push ${REGISTRY}/${IMAGE_NAME}:latest
+                        docker logout ${REGISTRY}
+                    """
+                                                 }
             }
         }
 
