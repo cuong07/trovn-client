@@ -1,62 +1,66 @@
 pipeline {
-    agent any
-    
-    tools {
-        nodejs '20'
+    agent {
+        docker {
+            image 'docker:24.0'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
     }
-    
+
+    environment {
+        REGISTRY    = credentials('docker-registry-url')
+        DEPLOY_HOST = credentials('deploy-host')
+        IMAGE_NAME  = 'tro-client'
+    }
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-        
-        stage('Install Dependencies') {
+
+        stage('Build Docker Image') {
             steps {
-                dir('tro-client') {
-                    sh 'npm install'
+                script {
+                    docker.build("${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}")
                 }
             }
         }
-        
-        stage('Build') {
+
+        stage('Push Docker Image') {
             steps {
-                dir('tro-client') {
-                    sh 'npm run build'
+                script {
+                    docker.withRegistry("http://${REGISTRY}", null) {
+                        def image = docker.image("${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}")
+                        image.push()
+                        image.push('latest')
+                    }
                 }
             }
         }
-        
-        stage('Deploy') {
-            when {
-                branch 'main'
-            }
+
+        stage('Deploy to Server 2') {
             steps {
-                echo 'Deploying to production...'
-                dir('tro-client') {
-                    // Copy built files to web server
-                    sh '''
-                        sudo rm -rf /var/www/html/tro-client/*
-                        sudo cp -r dist/* /var/www/html/tro-client/
-                        sudo chown -R www-data:www-data /var/www/html/tro-client
-                    '''
+                sshagent(['server2-ssh']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no root@${DEPLOY_HOST} '
+                            docker pull ${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} &&
+                            docker stop ${IMAGE_NAME} || true &&
+                            docker rm ${IMAGE_NAME} || true &&
+                            docker run -d --name ${IMAGE_NAME} -p 5174:5174 ${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}
+                        '
+                    """
                 }
             }
         }
     }
-    
+
     post {
-        always {
-            cleanWs()
-        }
-        
         success {
-            echo 'Build succeeded!'
+            echo '✅ Build & Deploy thành công!'
         }
-        
         failure {
-            echo 'Build failed!'
+            echo '❌ Pipeline lỗi!'
         }
     }
 }
