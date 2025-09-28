@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+    
+    tools {
+        nodejs '20'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                dir('tro-client') {
+                    sh 'npm install'
+                }
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                dir('tro-client') {
+                    sh 'npm run build'
+                }
+            }
+        }
+        
+        stage('Deploy') {
+            when {
+                branch 'main'
+            }
+            steps {
+                echo 'Deploying to production...'
+                dir('tro-client') {
+                    // Copy built files to web server
+                    sh '''
+                        sudo rm -rf /var/www/html/tro-client/*
+                        sudo cp -r dist/* /var/www/html/tro-client/
+                        sudo chown -R www-data:www-data /var/www/html/tro-client
+                    '''
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            cleanWs()
+        }
+        
+        success {
+            echo 'Build succeeded!'
+        }
+        
+        failure {
+            echo 'Build failed!'
+        }
+    }
+}
