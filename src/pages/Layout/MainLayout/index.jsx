@@ -17,13 +17,11 @@ import { Chatbot } from "@/pages";
 import { ChevronDown, DollarSign, EarthIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const TOKEN = JSON.parse(localStorage.getItem("token"));
 
 const Index = () => {
   const { setAmenities } = useAmenityStore();
   const { setLocations } = useLocationStore();
   const [openFooter, setOpenFooter] = useState(false);
-  const { user, unReadNotification } = useUserStore();
   const location = useLocation();
 
   const isChatPage = location.pathname.includes("/chat");
@@ -61,7 +59,7 @@ const Index = () => {
 
   return (
     <div className="bg-none bg-transparent">
-      <header className="h-20 border-b bg-transparent p-0 m-0 sticky top-0 shadow-sm left-0 z-50 right-0 bg-white">
+      <header className="h-28 border-b bg-transparent p-0 m-0 sticky top-0 shadow-sm left-0 z-50 right-0 bg-white">
         <MainHeader />
       </header>
       <section className="min-h-svh">

@@ -103,7 +103,7 @@ const Index = () => {
 
   return (
     <div>
-      <div className="sticky top-20 z-40 left-0 right-0">
+      <div className="sticky top-28 z-40 left-0 right-0">
         <SliderFilter
           data={amenities}
           handleClickItem={handleClickItem}
@@ -124,7 +124,7 @@ const Index = () => {
 
         {!isLoading && <ProductList data={contents} />}
         {isLoading && (
-          <div className="grid 2xl:grid-cols-5 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1  gap-6">
+          <div className="grid 2xl:grid-cols-7 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1  gap-6">
             {new Array(20).fill(0).map((_, index) => (
               <div key={index}>
                 <div className="w-full mb-2 rounded-xl animate-pulse aspect-square bg-[#F0F0F0]"></div>

@@ -26,7 +26,7 @@ const Index = ({ data, column }) => {
       variants={listVariants}
       className={cn(
         clsx(
-          "grid 2xl:grid-cols-5 xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-1  gap-6",
+          "grid 2xl:grid-cols-7 xl:grid-cols-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-1  gap-3",
           column && `xl:grid-cols-${column} 2xl:grid-cols-${column} `
         )
       )}

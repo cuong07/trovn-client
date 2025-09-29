@@ -31,6 +31,7 @@ import { useToast } from "@/components/ui/use-toast";
 import useUserStore from "@/hooks/useUserStore";
 import { toast } from "sonner";
 import { NOTIFICATION_TYPE } from "@/enums";
+import { truncate } from "lodash";
 
 moment.locale("vi");
 
@@ -157,7 +158,7 @@ const Index = () => {
         {!isLoading && (
           <>
             <div className="py-4 flex justify-between">
-              <div className="font-semibold text-xl">{listing.title}</div>
+              <div className="font-semibold text-xl">{truncate(listing.title, { length: 70 })}</div>
               <div className="md:flex hidden items-center gap-4 ">
                 <div className="flex gap-2 items-center cursor-pointer">
                   <BiShare size={20} />

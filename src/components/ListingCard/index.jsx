@@ -103,7 +103,7 @@ const Index = ({ listing, onClose }) => {
               effect="blur"
               src={listing?.user?.avatarUrl}
               alt=""
-              className="aspect-square rounded-full size-10"
+              className="aspect-square rounded-full object-cover size-10"
             />
           </Link>
           <div className="absolute bottom-4 right-2 z-10">
@@ -118,12 +118,12 @@ const Index = ({ listing, onClose }) => {
           to={`/listing/${listing.id}`}
           className="flex flex-col text-[15px] gap-y-[2px] hover:text-[#222]"
         >
-          <h2 className=" font-semibold leading-[19px]" title={listing?.title}>
+          <h2 className=" font-semibold leading-[19px] text-[12px]" title={listing?.title}>
             {listing?.title?.length > 30
               ? `${listing.title.slice(0, 30)}...`
               : listing.title}
           </h2>
-          <div className="text-[#717171]" title={listing?.address}>
+          <div className="text-[#717171] text-[10px]" title={listing?.address}>
             {listing?.address?.length > 30
               ? `${listing.address.slice(0, 30)}...`
               : listing.address}
@@ -134,12 +134,12 @@ const Index = ({ listing, onClose }) => {
             </div>
           )}
 
-          <div className="mt-[6px] flex justify-between">
+          <div className="mt-[6px] flex justify-between items-center">
             <div className=" font-semibold text-lg leading-[19px]">
               {`${formatMoney(listing.price)} `}
               <span className="font-normal text-xs">/ Tháng</span>
             </div>
-            <div className="text-xs">
+            <div className="text-[10px]">
               {getTimeDifference(listing.createdAt)}
             </div>
           </div>

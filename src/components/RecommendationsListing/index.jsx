@@ -29,10 +29,10 @@ export const RecommendationsListing = ({ listings }) => {
               slidesPerView: 3,
             },
             1280: {
-              slidesPerView: 4,
+              slidesPerView: 5,
             },
             1536: {
-              slidesPerView: 5,
+              slidesPerView: 7,
             },
           }}
           loop={true}
