@@ -6,6 +6,7 @@ pipeline {
         REGISTRY = credentials('docker-registry-url')
         DEPLOY_HOST = credentials('deploy-host')
         IMAGE_NAME = 'tro-client'
+        ENV_BASE64 = credentials('env_base64')
     }
 
     stages {
@@ -33,10 +34,20 @@ pipeline {
             }
         }
 
+        stage('Prepare Environment File') {
+            steps {
+                sh '''
+                    echo "$ENV_BASE64" | base64 -d > .env
+                    cat .env
+                '''
+            }
+        }
+
         stage('Deploy to Server 2') {
             steps {
                 sshagent(['server2-ssh']) {
                     sh """
+                        scp -o StrictHostKeyChecking=no .env root@${DEPLOY_HOST}:/root/${IMAGE_NAME}/.env
                         ssh -o StrictHostKeyChecking=no root@${DEPLOY_HOST} '
                             docker pull ${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} &&
                             docker stop ${IMAGE_NAME} || true &&
@@ -44,6 +55,7 @@ pipeline {
                             docker run -d \\
                                 --name ${IMAGE_NAME} \\
                                 --restart unless-stopped \\
+                                --env-file /root/${IMAGE_NAME}/.env \\
                                 -p 5174:5174 \\
                                 ${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}
                         '
