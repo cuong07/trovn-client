@@ -16,6 +16,15 @@ pipeline {
             }
         }
 
+        stage('Prepare Environment File') {
+            steps {
+                sh '''
+                    echo "$ENV_BASE64" | base64 -d > .env
+                    cat .env
+                '''
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 sh """
@@ -31,15 +40,6 @@ pipeline {
                     docker push ${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}
                     docker push ${REGISTRY}/${IMAGE_NAME}:latest
                 """
-            }
-        }
-
-        stage('Prepare Environment File') {
-            steps {
-                sh '''
-                    echo "$ENV_BASE64" | base64 -d > .env
-                    cat .env
-                '''
             }
         }
 

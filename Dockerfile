@@ -5,7 +5,13 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
+# Copy .env file trước
+COPY .env .env
+
+# Copy source code
 COPY . .
+
+# Build ứng dụng (Vite sẽ đọc .env file ở đây)
 RUN npm run build
 
 FROM node:20-alpine
