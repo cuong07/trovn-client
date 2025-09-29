@@ -1,10 +1,6 @@
-/* groovylint-disable LineLength */
 pipeline {
     agent {
-        docker {
-            image 'docker:24-dind'
-            args '--privileged -v /var/run/docker.sock:/var/run/docker.sock'
-        }
+        label 'docker' // Use a Jenkins agent with Docker installed
     }
 
     environment {
@@ -14,21 +10,6 @@ pipeline {
     }
 
     stages {
-        stage('Setup Docker') {
-            steps {
-                sh '''
-                    if ! command -v docker &> /dev/null; then
-                        echo "Docker not found, installing..."
-                        apk add --no-cache docker
-                        dockerd &
-                        sleep 5
-                    else
-                        echo "Docker already installed"
-                    fi
-                '''
-            }
-        }
-
         stage('Checkout') {
             steps {
                 checkout scm
