@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'docker:24.0'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
+    agent any
 
     environment {
         REGISTRY    = credentials('docker-registry-url')
@@ -21,21 +16,17 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build("${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}")
-                }
+                sh "docker build -t $REGISTRY/$IMAGE_NAME:$BUILD_NUMBER ."
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                script {
-                    docker.withRegistry("http://${REGISTRY}", null) {
-                        def image = docker.image("${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}")
-                        image.push()
-                        image.push('latest')
-                    }
-                }
+                sh """
+                  docker push $REGISTRY/$IMAGE_NAME:$BUILD_NUMBER
+                  docker tag $REGISTRY/$IMAGE_NAME:$BUILD_NUMBER $REGISTRY/$IMAGE_NAME:latest
+                  docker push $REGISTRY/$IMAGE_NAME:latest
+                """
             }
         }
 
@@ -43,11 +34,11 @@ pipeline {
             steps {
                 sshagent(['server2-ssh']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no root@${DEPLOY_HOST} '
-                            docker pull ${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} &&
-                            docker stop ${IMAGE_NAME} || true &&
-                            docker rm ${IMAGE_NAME} || true &&
-                            docker run -d --name ${IMAGE_NAME} -p 5174:5174 ${REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}
+                        ssh -o StrictHostKeyChecking=no root@$DEPLOY_HOST '
+                            docker pull $REGISTRY/$IMAGE_NAME:$BUILD_NUMBER &&
+                            docker stop $IMAGE_NAME || true &&
+                            docker rm $IMAGE_NAME || true &&
+                            docker run -d --name $IMAGE_NAME -p 5174:5174 $REGISTRY/$IMAGE_NAME:$BUILD_NUMBER
                         '
                     """
                 }
