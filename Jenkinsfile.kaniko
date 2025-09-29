@@ -1,0 +1,77 @@
+/* groovylint-disable LineLength */
+pipeline {
+    agent any
+
+    environment {
+        REGISTRY = credentials('docker-registry-url')
+        DEPLOY_HOST = credentials('deploy-host')
+        IMAGE_NAME = 'tro-client'
+    }
+
+    stages {
+        stage('Checkout') {
+      steps {
+        checkout scm
+      }
+        }
+
+        stage('Build and Push with Kaniko') {
+      agent {
+        kubernetes {
+          yaml '''
+                        apiVersion: v1
+                        kind: Pod
+                        spec:
+                          containers:
+                          - name: kaniko
+                            image: gcr.io/kaniko-project/executor:debug
+                            command:
+                            - /busybox/cat
+                            tty: true
+                            volumeMounts:
+                            - name: docker-config
+                              mountPath: /kaniko/.docker
+                          volumes:
+                          - name: docker-config
+                            configMap:
+                              name: docker-config
+                    '''
+        }
+      }
+      steps {
+        container('kaniko') {
+          withCredentials([usernamePassword(credentialsId: 'docker-registry-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+            sh '''
+                            echo "{\\"auths\\":{\\"$REGISTRY\\":{\\"username\\":\\"$DOCKER_USER\\",\\"password\\":\\"$DOCKER_PASS\\"}}}" > /kaniko/.docker/config.json
+                            /kaniko/executor --context=. --dockerfile=Dockerfile --destination=$REGISTRY/$IMAGE_NAME:$BUILD_NUMBER --destination=$REGISTRY/$IMAGE_NAME:latest
+                        '''
+          }
+        }
+      }
+        }
+
+        stage('Deploy to Server') {
+      steps {
+        sshagent(['server2-ssh']) {
+          sh """
+                        ssh -o StrictHostKeyChecking=no root@$DEPLOY_HOST '
+                            docker pull $REGISTRY/$IMAGE_NAME:$BUILD_NUMBER &&
+                            docker stop $IMAGE_NAME || true &&
+                            docker rm $IMAGE_NAME || true &&
+                            docker run -d --name $IMAGE_NAME -p 5174:5174 $REGISTRY/$IMAGE_NAME:$BUILD_NUMBER
+                        '
+                    """
+        }
+      }
+        }
+    }
+
+    post {
+        success {
+      echo '✅ Build & Deploy thành công!'
+        }
+        failure {
+      echo '❌ Pipeline lỗi!'
+        }
+    }
+}
